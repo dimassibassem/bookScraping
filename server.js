@@ -128,6 +128,54 @@ app.get('/cpu/:isbn', async (req, res) => {
     return res.json({data, time});
 })
 
+
+app.get('/almanhal/:isbn', async (req, res) => {
+    const {isbn} = req.params
+    const startDate = new Date().getTime() / 1000
+    const browser = await puppeteer.launch({headless: false});
+    const page = await browser.newPage();
+    await page.setDefaultTimeout(30000000);
+    await page.goto(`https://platform.almanhal.com/Search/Result?q=&sf_28_0_2=${isbn}&opsf_28_0=1`, {waitUntil: 'load'});
+
+    await page.waitForSelector('#result-container', {
+        visible: true,
+    });
+    try {
+        const link = await page.evaluate(() => {
+            return document.querySelector('#result-container > div > div:nth-child(2) > div > ul > li:nth-child(3) > a').href
+        })
+        await page.goto(link, {waitUntil: 'load'});
+        const data = await page.evaluate(() => {
+            const title = document.querySelector('#lnkTitle').textContent.trim();
+            const author = document.querySelector('#authorsContainer > div.col-md-10 > div > label').textContent.trim();
+            const publisher = document.querySelector('#publishersContainer > div.col-md-10 > label').textContent.trim();
+            const topics = document.querySelector('#mainTopicsContainer > div.col-md-10 > label').textContent.trim();
+            const pages = document.querySelector('#Details > section > div > div:nth-child(1) > div:nth-child(3) > div > div.col-md-5.p-0 > label').textContent.trim();
+            const ISBN = document.querySelector('#Details > section > div > div:nth-child(1) > div:nth-child(6) > div > div.col-md-5.p-0 > label').textContent.trim();
+            const coverImage = document.querySelector('#img-title').src;
+            const pageLink = window.location.href;
+            return {
+                title,
+                author,
+                ISBN,
+                publisher,
+                topics,
+                pages,
+                coverImage,
+                pageLink
+            }
+        })
+        await browser.close();
+        const endDate = new Date().getTime() / 1000
+        const time = "" + Math.round(endDate - startDate) + " seconds"
+        return res.json({data, time});
+    } catch (e) {
+        await browser.close();
+        return res.json({error: 'book not found'})
+    }
+
+})
+
 app.listen(3000, function () {
     console.log('Example app listening on port 3000!');
 });
