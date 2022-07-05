@@ -18,9 +18,9 @@ endpoints:
 
 ```
 http://localhost:3000/abebooks/:isbn
-http://localhost:3000/bookFinder/:isbn
+http://localhost:3000/bookfinder/:isbn
 http://localhost:3000/cpu/:isbn
-http://localhost:3000/alManhal/:isbn
+http://localhost:3000/almanhal/:isbn
 http://localhost:3000/amazon/:isbn
 ```
 and for testing all sources 
