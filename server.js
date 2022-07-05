@@ -2,9 +2,10 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require("cors")
+const {abebooks, bookFinder, cpu, alManhal, amazon} = require('./utils');
+
 app.use(cors())
 app.use(bodyParser.json({limit: '50mb'}));
-const {abebooks, bookFinder, cpu, alManhal, amazon} = require('./utils');
 
 app.get('/abebooks/:isbn', async function (req, res) {
     const isbn = req.params.isbn;
