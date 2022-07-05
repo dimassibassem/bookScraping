@@ -36,7 +36,6 @@ app.get('/abebooks/:isbn', async function (req, res) {
     return res.json({data, time});
 })
 
-
 app.get('/bookfinder/:isbn', async (req, res) => {
     const {isbn} = req.params
     const startDate = new Date().getTime() / 1000
@@ -128,14 +127,13 @@ app.get('/cpu/:isbn', async (req, res) => {
     return res.json({data, time});
 })
 
-
 app.get('/almanhal/:isbn', async (req, res) => {
     const {isbn} = req.params
     const startDate = new Date().getTime() / 1000
     const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
     await page.setDefaultTimeout(30000000);
-    await page.goto(`https://platform.almanhal.com/Search/Result?q=&sf_28_0_2=${isbn}&opsf_28_0=1`, {waitUntil: 'load'});
+    await page.goto(`https://platform.almanhal.com/Search/Result?q=&sf_28_0_2=${isbn}&opsf_28_0=1`, {waitUntil: 'networkidle2'});
 
     await page.waitForSelector('#result-container', {
         visible: true,
@@ -175,6 +173,36 @@ app.get('/almanhal/:isbn', async (req, res) => {
     }
 
 })
+
+app.get('/amazon/:isbn', async (req, res) => {
+    const {isbn} = req.params
+    const startDate = new Date().getTime() / 1000
+    const browser = await puppeteer.launch({headless: false});
+    const page = await browser.newPage();
+    await page.setDefaultTimeout(30000000);
+
+    await page.goto(`https://www.amazon.ca/s?k=${isbn}&crid=3P70C7NM9WVF7&sprefix=${isbn}%2Caps%2C190&ref=nb_sb_noss`, {waitUntil: 'networkidle2'});
+    try {
+        const data = await page.evaluate(() => {
+            const title = document.querySelector('#search > div.s-desktop-width-max.s-desktop-content.s-opposite-dir.sg-row > div.s-matching-dir.sg-col-16-of-20.sg-col.sg-col-8-of-12.sg-col-12-of-16 > div > span:nth-child(4) > div.s-main-slot.s-result-list.s-search-results.sg-row > div.sg-col-4-of-12.s-result-item.s-asin.sg-col-4-of-16.sg-col.s-widget-spacing-small.sg-col-4-of-20 > div > div > div > div > div.a-section.a-spacing-small.s-padding-left-small.s-padding-right-small > div.a-section.a-spacing-none.a-spacing-top-small.s-title-instructions-style > h2 > a > span').textContent
+            const coverImage = document.querySelector('#search > div.s-desktop-width-max.s-desktop-content.s-opposite-dir.sg-row > div.s-matching-dir.sg-col-16-of-20.sg-col.sg-col-8-of-12.sg-col-12-of-16 > div > span:nth-child(4) > div.s-main-slot.s-result-list.s-search-results.sg-row > div.sg-col-4-of-12.s-result-item.s-asin.sg-col-4-of-16.sg-col.s-widget-spacing-small.sg-col-4-of-20 > div > div > div > div > div.s-product-image-container.aok-relative.s-image-overlay-grey.s-text-center.s-padding-left-small.s-padding-right-small.s-spacing-small.s-height-equalized > span > a > div > img').src
+            const pageLink = window.location.href;
+            return {
+                title,
+                coverImage,
+                pageLink
+            }
+        })
+        await browser.close();
+        const endDate = new Date().getTime() / 1000
+        const time = "" + Math.round(endDate - startDate) + " seconds"
+        return res.json({data, time});
+    } catch (e) {
+        await browser.close();
+        return res.json({error: 'book not found'})
+    }
+})
+
 
 app.listen(3000, function () {
     console.log('Example app listening on port 3000!');
